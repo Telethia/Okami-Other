@@ -1,13 +1,27 @@
 #Sort of like a whatever for other non-main files.
 
+from pathlib import Path
 import os
 import struct
 
 def Main():
     File1 = 0
     File1 = input("Drag file here: ")
-    Path, Ext = os.path.splitext(File1)
+    if File1.startswith("&"):
+        TempVar = File1.split("'")
+        FixedFile = TempVar[1]
+        #print(FixedFile)
+    else:
+        FixedFile = File1
+    FixedPath1 = Path(FixedFile).parent
+    FixedPath = str(FixedPath1)
+    #print(FixedPath)
+    FileName1 = Path(FixedFile).stem
+    FileName = str(FileName1)
+    Ext = Path(FixedFile).suffix
     Ext = Ext.lower()
+    #Path, Ext1 = os.path.splitext(File1)
+    #Ext = Ext.lower()
     Vers1 = input("November Proto or Final? P/F ")
     Vers = Vers1.lower()
     MapFile = open("map.tbl", 'r', encoding="UTF-8")
@@ -44,8 +58,8 @@ def Main():
             except ValueError:
                 #print("Malformed value at" + item)
                 pass
-        FileOpen = open(Path + ".JMP", 'rb')
-        OutputFile = open(Path + ".txt", 'w', encoding="UTF-8")
+        FileOpen = open(FixedPath + "\\" + FileName + ".JMP", 'rb')
+        OutputFile = open(FixedPath + "\\" + FileName + "_JMP.txt", 'w', encoding="UTF-8")
         EntryCount = int.from_bytes(FileOpen.read(4), 'little') #Grab how many entries are in this file
         print(EntryCount)
         i = 0
@@ -94,19 +108,23 @@ def Main():
             OutputFile.write(Text)
             i += 1
         print("Complete!")
+        OutputFile.close()
         Main()
 
     def SCA():
-        FileOpen = open(Path + ".SCA", 'rb')
-        OutputFile = open(Path + ".txt", 'w', encoding="UTF-8")
+        FileOpen = open(FixedPath + "\\" + FileName + ".SCA", 'rb')
+        OutputFile = open(FixedPath + "\\" + FileName + "_SCA.txt", 'w', encoding="UTF-8")
         FileOpen.seek(6, 1) #Skip the header and first unknown
         ZoneNr = int.from_bytes(FileOpen.read(1), 'little') #Number of zones in file
         FileOpen.seek(9, 1) #Skip even more stuff!
+        if Vers == 'p':
+            pass
+        elif Vers == 'f':
+            FileOpen.seek(4, 1)
         i = 0
         print("Starting conversion...")
         while i < ZoneNr:
             FileOpen.seek(5, 1)
-            #print("We are at " + str("0x" + format(FileOpen.tell(), 'x')) + " at the beginning")
             ZoneShape = int.from_bytes(FileOpen.read(1), 'little')
             if ZoneShape == 1:
                 ZoneShapeStr = "Quadrilateral Prism"
@@ -181,20 +199,27 @@ def Main():
             Text = "~~~~~~~~~~~~~~~~~~~~\n\n"
             OutputFile.write(Text)
             i += 1
-            FileOpen.seek(100, 1) #lmao
+            if Vers == 'p':
+                FileOpen.seek(100, 1) #lmao
+            elif Vers == 'f':
+                FileOpen.seek(120, 1)
         print("Complete!")
+        OutputFile.close()
         Main()
 
     def TRE():
         #this might say TRE but it works for TRE, TAT and TSC
-        FileOpen = open(Path + Ext, 'rb')
-        OutputFile = open(Path + ".txt", 'w', encoding="UTF-8")
+        FileOpen = open(FixedPath + "\\" + FileName + Ext, 'rb')
+        OutputFile = open(FixedPath + "\\" + FileName + "_" + Ext + ".txt", 'w', encoding="UTF-8")
         EntryCount = int.from_bytes(FileOpen.read(4), 'little') #Grab how many entries are in this file
-        #print(EntryCount)
+        Text = "Total entries in file: " + str(EntryCount) + "\n"
+        OutputFile.write(Text)
         ObjType = ["scr","pl","em","et","hm","an","wp","ef","ut","gt","it","vt","dr","ms","es","us"]
         i = 0
+        foundObject = False
         print("Starting conversion...")
         while i < EntryCount:
+            print(i)
             #print(str("0x" + format(FileOpen.tell(), 'x')))
             ObjEntry = int.from_bytes(FileOpen.read(1), 'little')
             ObjEntryHex = format(ObjEntry, 'x').zfill(2)
@@ -223,6 +248,9 @@ def Main():
                 pass
             Text = "Entry: " + str(i) + "\n"
             OutputFile.write(Text)
+            FullObjType = ObjType[ObjTypeRaw] + str(ObjEntryHex)
+            if FullObjType == "vt31":
+                foundObject = True
             Text = "Object is " + ObjType[ObjTypeRaw] + str(ObjEntryHex) + "\n"
             OutputFile.write(Text)
             Text = "Size is " + str(SizeX) + ", " + str(SizeY) + ", " + str(SizeZ) + "\n"
@@ -235,11 +263,14 @@ def Main():
             OutputFile.write(Text)
             i += 1
         print("Complete!")
+        if foundObject == True:
+            print("vt31 found!")
+        OutputFile.close()
         Main()
 
     def ANS():
-        FileOpen = open(Path + Ext, 'rb')
-        OutputFile = open(Path + ".txt", 'w', encoding="UTF-8")
+        FileOpen = open(FileName + Ext, 'rb')
+        OutputFile = open(FileName + ".txt", 'w', encoding="UTF-8")
         EntryCount = int.from_bytes(FileOpen.read(4), 'little') #Grab how many entries are in this file
         AnType = ["Monkey", "Crane", "Deer", "Hawk", "Boar", "Dog", "Fox", "Bear", "Raccoon", "Hare", "0a", "Chicken", "Sparrow", "Boar Piglet", "Pig", "Seagull", "Inaba", "100 Year Old Dog", "13", "Owl", "Canina Warrior Chu (Hayabusa)", "Mouse", "Tiger", "Horse", "Snake", "Dragon", "Cat", "Cow", "Sheep", "Canina Warrior Jin (Ume)", "Canina Warrior Gi (Take)", "Canina Warrior Chi", "Canina Warrior Ko", "Canina Warrior Rei", "Canina Warrior Shin", "Canina Warrior Tei", "Nightingale", "Crow", "Bat"]
         #print(EntryCount)
