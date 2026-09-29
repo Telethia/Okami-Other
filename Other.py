@@ -3,9 +3,14 @@
 from pathlib import Path
 import os
 import struct
+import configparser
+config = configparser.ConfigParser()
 
 def Main():
     File1 = 0
+    SettingsFile = config.read('options.ini')
+    SeekingItem = config['Values']['SeekingItem']
+    SeekingItemID = config['Values']['SeekingItemID']
     File1 = input("Drag file here: ")
     if File1.startswith("&"):
         TempVar = File1.split("'")
@@ -249,8 +254,9 @@ def Main():
             Text = "Entry: " + str(i) + "\n"
             OutputFile.write(Text)
             FullObjType = ObjType[ObjTypeRaw] + str(ObjEntryHex)
-            if FullObjType == "vt31":
-                foundObject = True
+            if SeekingItem == "True":
+                if FullObjType == SeekingItemID:
+                    foundObject = True
             Text = "Object is " + ObjType[ObjTypeRaw] + str(ObjEntryHex) + "\n"
             OutputFile.write(Text)
             Text = "Size is " + str(SizeX) + ", " + str(SizeY) + ", " + str(SizeZ) + "\n"
@@ -264,7 +270,7 @@ def Main():
             i += 1
         print("Complete!")
         if foundObject == True:
-            print("vt31 found!")
+            print(SeekingItemID + " found!")
         OutputFile.close()
         Main()
 
